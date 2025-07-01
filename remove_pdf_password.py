@@ -4,6 +4,7 @@ import pikepdf
 import getpass
 import shutil
 
+
 def is_pdf_password_protected(file_path):
     try:
         with pikepdf.open(file_path) as pdf:
@@ -13,6 +14,7 @@ def is_pdf_password_protected(file_path):
     except Exception as e:
         print(f"Error checking {file_path}: {e}")
         return False
+
 
 def remove_pdf_password_in_folder(input_folder_path, output_folder_path, password):
     # Create the output directory if it doesn't exist
@@ -49,6 +51,7 @@ def remove_pdf_password_in_folder(input_folder_path, output_folder_path, passwor
                 print(f"Skipping {file_path}: Incorrect password")
             except Exception as e:
                 print(f"An error occurred with file {file_path}: {e}")
+
 
 if __name__ == "__main__":
     # Get the current directory
