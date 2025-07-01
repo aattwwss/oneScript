@@ -2,7 +2,17 @@ import os
 import sys
 import pikepdf
 import getpass
+import shutil
 
+def is_pdf_password_protected(file_path):
+    try:
+        with pikepdf.open(file_path) as pdf:
+            return False  # No password required
+    except pikepdf.PasswordError:
+        return True  # Password required
+    except Exception as e:
+        print(f"Error checking {file_path}: {e}")
+        return False
 
 def remove_pdf_password_in_folder(input_folder_path, output_folder_path, password):
     # Create the output directory if it doesn't exist
@@ -15,24 +25,30 @@ def remove_pdf_password_in_folder(input_folder_path, output_folder_path, passwor
         # Check if the file is a PDF
         if file_path.lower().endswith(".pdf"):
             try:
-                # Try to open the PDF with the provided password
-                with pikepdf.open(file_path, password=password) as pdf:
-                    # Create a new filename with a "_decrypted" suffix
+                # Check if the PDF is password protected
+                if is_pdf_password_protected(file_path):
+                    # Try to open and decrypt the PDF with the provided password
+                    with pikepdf.open(file_path, password=password) as pdf:
+                        # Create a new filename with a "_decrypted" suffix
+                        base, ext = os.path.splitext(filename)
+                        new_filename = f"{base}_decrypted{ext}"
+                        output_pdf_path = os.path.join(output_folder_path, new_filename)
+
+                        # Save the decrypted PDF to the output directory
+                        pdf.save(output_pdf_path)
+                        print(f"Decrypted and saved: {output_pdf_path}")
+                else:
+                    # If not password protected, copy the file to output folder
                     base, ext = os.path.splitext(filename)
                     new_filename = f"{base}_decrypted{ext}"
                     output_pdf_path = os.path.join(output_folder_path, new_filename)
-
-                    # Save the decrypted PDF to the output directory
-                    pdf.save(output_pdf_path)
-                    print(f"Decrypted and saved: {output_pdf_path}")
+                    shutil.copy2(file_path, output_pdf_path)
+                    print(f"Copied non-protected PDF: {output_pdf_path}")
 
             except pikepdf.PasswordError:
-                # Handle wrong password or unencrypted situation
-                print(f"Skipping non-encrypted or incorrect password PDF: {file_path}")
+                print(f"Skipping {file_path}: Incorrect password")
             except Exception as e:
-                # Handle any other exceptions
                 print(f"An error occurred with file {file_path}: {e}")
-
 
 if __name__ == "__main__":
     # Get the current directory
@@ -47,4 +63,3 @@ if __name__ == "__main__":
 
     # Process the PDFs in the specified or default directories
     remove_pdf_password_in_folder(input_folder, output_folder, pdf_password)
-
